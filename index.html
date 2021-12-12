@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quetzal 1.0</title>
+    
+    <!--plugin de codeMirror-->
+    <link rel="stylesheet" type="text/css" href="plugin/codemirror/lib/codemirror.css">
+    <!-- hoja de estilos css -->
+    <link href="styles/estilos.css" rel="stylesheet" type="text/css">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-dark bg-dark">
+            <span class="navbar-brand mb-0 h1">Quetzal 1.0</span>
+            <span class="navbar-brand mb-0 h1">G42</span>
+        </nav>
+    
+    <div id="botones" style="margin-top:10px; margin-bottom: 10px;">
+        <button type="button" class="btn btn-dark" onclick="NewDocument();" title="Nuevo Archivo en Blanco">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor"
+                class="bi bi-file-earmark-plus" viewBox="0 0 16 16">
+                <path
+                    d="M8 6.5a.5.5 0 0 1 .5.5v1.5H10a.5.5 0 0 1 0 1H8.5V11a.5.5 0 0 1-1 0V9.5H6a.5.5 0 0 1 0-1h1.5V7a.5.5 0 0 1 .5-.5z" />
+                <path
+                    d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z" />
+            </svg>
+        </button>
+        <button type="button" class="btn btn-dark" onclick="clickAbrirArchivo();" title="Abrir archivo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor"
+                class="bi bi-folder2-open" viewBox="0 0 16 16">
+                <path
+                    d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v.64c.57.265.94.876.856 1.546l-.64 5.124A2.5 2.5 0 0 1 12.733 15H3.266a2.5 2.5 0 0 1-2.481-2.19l-.64-5.124A1.5 1.5 0 0 1 1 6.14V3.5zM2 6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3H2.5a.5.5 0 0 0-.5.5V6zm-.367 1a.5.5 0 0 0-.496.562l.64 5.124A1.5 1.5 0 0 0 3.266 14h9.468a1.5 1.5 0 0 0 1.489-1.314l.64-5.124A.5.5 0 0 0 14.367 7H1.633z" />
+            </svg>
+        </button>
+        <input type="file" class="oculto" id="abreArchivo">
+        <button type="button" class="btn btn-dark" onclick="pruebaGraficarViz();" title="Guardar archivo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor"
+                class="bi bi-calendar-event" viewBox="0 0 16 16">
+                <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z" />
+                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z" />
+            </svg>
+        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Generar reportes">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-file-text" viewBox="0 0 16 16">
+                    <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+                </svg>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+                <button class="dropdown-item btn-dark" type="button" onclick="abrirReporteAST();">Reporte AST</button>
+                <button class="dropdown-item" type="button" onclick="abrirReporteCST();">Reporte CST</button>
+                <button class="dropdown-item" type="button" onclick="abrirReporteTS();">Reporte TS</button>
+                <button class="dropdown-item" type="button" onclick="abrirReporteErrores();">Reporte Errores</button>
+                <button class="dropdown-item" type="button" onclick="abrirReporteGramatical();">Reporte Gramatical</button>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="" title="Reinicia la ejecución">
+            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-app" viewBox="0 0 16 16">
+                <path d="M11 2a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3h6zM5 1a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4V5a4 4 0 0 0-4-4H5z"/>
+            </svg>
+        </button>
+        <button type="button" class="btn btn-success " onclick="Analyze()" title="Ejecuta el código Queztal 1.0">
+            Ejecutar
+        </button>
+        <button type="button" class="btn btn-info" style="display: none;" onclick="AnalyzeXQUERY();" title="Ejecuta el código XQUERY">
+            Generar C3D
+        </button>
+        <button type="button" class="btn btn-info oculto" style="display: none;" onclick="pruebaC3D();" title="Ejecuta el código XQUERY">
+            TEST
+        </button>
+    </div>
+    <table style="width:100%">
+        <tr cols="3">
+            <td colspan="1" align="left"><label>Ingrese el código aquí:</label><br></td>
+            <td colspan="1" align="left"><label>Resultado de traducción:</label></td>
+            <td colspan="1" align="left"><label>Código 3D generado:</label><br></td>
+        </tr>
+        <tr cols="3">
+            <td align="left" colspan="1" style="width:34%;">
+                <textarea id="Entrada" class="codemirror-textarea" rows="50" cols="65"></textarea>
+            </td>
+            <td align="left" colspan="1" style="width:35%;">
+                <textarea id="Resultados"  rows="50" cols="65"></textarea>
+            </td>
+            <td align="left" colspan="1" style="width:33.33%;">
+                <textarea id="Salida" class="CodigoSalida" rows="50" cols="55"></textarea>
+            </td>
+        </tr>
+        <tr></tr>
+        <tr>
+            <td><label>Consola:</label><br></td>
+        </tr>
+        <tr>
+            <td align="center" colspan="3">
+                <textarea id="consola" rows="10" cols="100" class="consola" readonly></textarea>
+            </td>
+        </tr>
+    </table>
+    <br>
+    <br>
+
+    <!--***************************area para reportes******************************-->
+        <!--Area para reporte de AST-->
+        <div id="reporteASTGrafica" style="width:100%; height:100%; overflow: scroll; align-content: center; text-align: center;"></div>
+        <input type="hidden" id="hiddenAST" Text="">
+
+        <!--Area para reporte de Tabla de Símbolos-->
+        <div id="reporteCSTGrafica" style="width:100%; height:100%; overflow: scroll; align-content: center; text-align: center;"></div>
+        <input type="hidden" id="hiddenCST" Text="">
+
+        <!--Area para reporte de Tabla de Símbolos-->
+        <div id="reporteTablaSimbolosIndex" class="table-responsive table-bordered" style="text-align: center; align-content: center; align-items: center; width: 100%; justify-content: center;"></div>
+        <input type="hidden" id="hiddenTablaSimbolos" Text="">
+
+        <!--Area para reporte de Errores-->
+        <div id="reporteErroresTabla" class="table-responsive table-bordered" style="text-align: center; align-content: center; align-items: center; width: 100%; justify-content: center;"></div>
+        <input type="hidden" id="hiddenErrores" Text="">
+
+        <!--Area para reporte de Tabla de Símbolos-->
+        <div id="reporteGramatical" class="table-responsive table-bordered" style="text-align: center; align-content: center; align-items: center; width: 100%; justify-content: center;"></div>
+        <input type="hidden" id="hiddenGramatical" Text="">
+
+        <div id="grafica"></div>
+    </div>
+
+    <!-- Option 1: jQuery and Bootstrap Bundle (includes Popper) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="plugin/codemirror/lib/codemirror.js"></script>
+    <script type="text/javascript" src="js/default.js"></script>
+    <script type="text/javascript" src="js/xml.js"></script>
+    <script type="text/javascript" src="js/sql.js"></script>
+    <script type="text/javascript" src="js/java.js"></script>
+
+    
+</body>
+<script>
+    function Analyze(){
+        let entrada = showCode();
+        let resultado = parseQuetzal(entrada);
+        if (resultado) {
+            document.getElementById('consola').value += "[RESULTADO]: " + resultado.toString() + "\n";
+        } else {
+            document.getElementById('consola').value += "[ERROR_PARSER]: No se pudo ejecutar el parser correctamente..." + "\n";
+            alert('[ERROR_PARSER]: No se pudo ejecutar el parser correctamente...');
+        }
+
+        return true;
+    }
+
+    function NewDocument(){
+        nuevoArchivo();
+    }
+
+    function clickAbrirArchivo(){
+        document.getElementById('abreArchivo').click();
+    }
+
+    window.addEventListener('load', () => {
+        document.getElementById('abreArchivo').addEventListener('change', abrirArchivo);
+    });
+
+</script>
+
+<script src = "js/funcionesParser2.js"></script> 
+<script src = "js/funcionesParser.js"></script> 
+<script src = "js/viz.js"></script>
+<script src = "js/full.render.js"></script>
+<script src = "Gramatica/gramatica.js"></script>
+
+</html>
