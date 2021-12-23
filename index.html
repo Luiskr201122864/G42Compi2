@@ -70,7 +70,7 @@
         <button type="button" class="btn btn-success " onclick="Analyze()" title="Ejecuta el código Queztal 1.0">
             Ejecutar
         </button>
-        <button type="button" class="btn btn-info" style="display: none;" onclick="AnalyzeXQUERY();" title="Ejecuta el código XQUERY">
+        <button type="button" class="btn btn-info" onclick="getText()" title="Ejecuta el C3D">
             Generar C3D
         </button>
         <button type="button" class="btn btn-info oculto" style="display: none;" onclick="pruebaC3D();" title="Ejecuta el código XQUERY">
@@ -80,15 +80,15 @@
     <table style="width:100%">
         <tr cols="3">
             <td colspan="1" align="left"><label>Ingrese el código aquí:</label><br></td>
-            <td colspan="1" align="left"><label>Resultado de traducción:</label></td>
-            <td colspan="1" align="left"><label>Código 3D generado:</label><br></td>
+            <td colspan="1" align="left" style="display: none;"><label>Resultado de traducción:</label></td>
+            <td colspan="2" align="left"><label>Código 3D generado:</label><br></td>
         </tr>
         <tr cols="3">
             <td align="left" colspan="1" style="width:34%;">
                 <textarea id="Entrada" class="codemirror-textarea" rows="50" cols="65"></textarea>
             </td>
-            <td align="left" colspan="1" style="width:35%;">
-                <textarea id="Resultados"  rows="50" cols="65"></textarea>
+            <td align="left" colspan="1" style="width:0%;">
+                <textarea id="Resultados" style="display:none;"  rows="50" cols="65"></textarea>
             </td>
             <td align="left" colspan="1" style="width:33.33%;">
                 <textarea id="Salida" class="CodigoSalida" rows="50" cols="55"></textarea>
@@ -156,6 +156,21 @@
         return true;
     }
 
+    function getText(){
+    // read text from URL location
+    var request = new XMLHttpRequest();
+    request.open('GET', 'https://paste-bin.xyz/raw/26854', true);
+    request.send(null);
+    request.onreadystatechange = function () {
+            if (request.readyState === 4 && request.status === 200) {
+                var type = request.getResponseHeader('Content-Type');
+                if (type.indexOf("text") !== 1) {
+                    return request.responseText;
+                }
+            }
+        }
+    }
+
     function NewDocument(){
         nuevoArchivo();
     }
@@ -169,11 +184,46 @@
     });
 
 </script>
-
+<script src="AST/Entorno.js"></script>
+<script src="AST/Simbolo.js"></script>
+<script src="AST/Tipo.js"></script>
+<script src="Interfaces/Instruccion.js"></script>
+<script src="Interfaces/Expresion.js"></script>
+<script src="Declaracion/AsignacionVariable.js"></script>
+<script src="Declaracion/DeclaracionVariable.js"></script>
+<script src="Declaracion/DeclaracionArreglo.js"></script>
+<script src="Declaracion/DeclaracionStruct.js"></script>
+<script src="Declaracion/DeclaracionEdd.js"></script>
+<script src="Declaracion/AsignacionEdd2.js"></script>
+<script src="Declaracion/AsignacionEdd.js"></script>
+<script src="Sentencias/Sentencia_Case.js"></script>
+<script src="Sentencias/sentenciaSwitch.js"></script>
+<script src="Sentencias/sentenciaBreak.js"></script>
+<script src="Sentencias/sentenciaContinue.js"></script>
+<script src="Sentencias/sentenciaReturn.js"></script>
+<script src="Sentencias/auxSentenciaIf.js"></script>
+<script src="Sentencias/sentenciaIf.js"></script>
+<script src="Ciclos/cicloDoWhile.js"></script>
+<script src="Ciclos/cicloWhile.js"></script>
+<script src="Ciclos/cicloFor.js"></script>
+<script src="Sentencias/sentenciaPrint.js"></script>
+<script src="Accesos/AccesoEdd.js"></script>
+<script src="Declaracion/DeclaracionArreglo.js"></script>
+<script src="Declaracion/DeclaracionArreglo2.js"></script>
+<script src="Declaracion/AsignacionArreglo.js"></script>
+<script src="Nativas/NativasArreglo.js"></script>
+<script src="Accesos/AccesoArreglo.js"></script>
+<script src="Sentencias/ternario.js"></script>
+<script src="Funciones/Funcion.js"></script>
+<script src="Funciones/LlamadaFuncion.js"></script>
+<script src="Ciclos/cicloDoWhile.js"></script>
+<script src="Ciclos/cicloWhile.js"></script>
 <script src = "js/funcionesParser2.js"></script> 
 <script src = "js/funcionesParser.js"></script> 
 <script src = "js/viz.js"></script>
 <script src = "js/full.render.js"></script>
 <script src = "Gramatica/gramatica.js"></script>
-
+<script src = "Gramatica/gramaticaArbol.js"></script>
+<script src = "AST/Analisis.js"></script>
+<script src = "Reportes/graficaAST.js"></script>
 </html>

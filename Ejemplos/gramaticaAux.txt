@@ -1,0 +1,2606 @@
+
+/* description: Parses and executes mathematical expressions. */
+
+/* lexical grammar */
+%lex
+%options case-insensitive
+%%
+
+\s+                   /* skip whitespace */
+/*-------------- Expresiones regulares --------------*/
+"//"[^\n]*                      /*comentario lineal*/ 
+"/*"[^"/#"]*"*/"                /*comentario multilineal*/
+[0-9]+"."[0-9]+       return 'DECIMAL'
+[0-9]+                return 'NUMBER'
+"'"[^"'"]"'"      	  return 'CARACTER'
+"\""[^"\""]*"\""	  return 'CADENA'
+
+
+
+/*------------------- Simbolos -------------------------*/
+":="                    return ':='
+":"                    return ':'
+"*"                     return '*'
+"/"                     return '/'
+"++"                    return '++'
+"--"                    return '--'
+"-"                     return '-'
+"+"                     return '+'
+"^"                     return '^'
+"^^"                     return '^^'
+"%"                     return '%'
+"."						return '.'
+";"						return ';'
+","						return ','
+"("                     return '('
+")"                     return ')'
+"["                     return '['
+"]"                     return ']'
+"{"                     return '{'
+"}"                     return '}'
+"=="                    return '=='
+"==="                   return '==='
+"!="                    return '!='
+"<="                    return '<='
+">="                    return '>='
+"<"                     return '<'
+">"                     return '>'
+"||"                    return '||'
+"&&"                    return '&&'
+"|&"                    return '|&'
+"!"                     return '!'
+"="                     return '='
+"$"                     return '$'
+
+
+/*----------------- Palabras reservadas ---------------*/
+
+"null"                      return 'NULL'
+"integer"                   return 'INTEGER'
+"double"		            return 'DOUBLE'
+"boolean"		            return 'BOOLEAN'
+"char"                      return 'CHAR'
+"import"					return 'IMPORT'
+"var"					    return 'VAR'
+"const"					    return 'CONST'
+"global"					return 'GLOBAL'
+"true"                      return 'TRUE'
+"false"                     return 'FALSE'
+"if"					    return 'IF'
+"else"					    return 'ELSE'
+"switch"				    return 'SWITCH'
+"case"				     	return 'CASE'
+"default"				    return 'DEFAULT'
+"break"				     	return 'BREAK'
+"continue"				    return 'CONTINUE'
+"return"					return 'RETURN'
+"print"				    	return 'PRINT'
+"public"					return 'PUBLIC'
+"private"					return 'PRIVATE'
+"void"					    return 'VOID'
+"for"					    return 'FOR'
+"while"					    return 'WHILE'
+"define"					return 'DEFINE'
+"as"					    return 'AS'
+"strc"                      return 'STRC'
+"do"					    return 'DO'
+"try"				        return 'TRY'
+"catch"                     return 'CATCH'
+"throw"                     return 'THROW'
+
+
+(("_"[A-Za-z])|[A-Za-z])([A-Za-z0-9]|"_")*	return 'ID'
+
+
+
+<<EOF>>               return 'EOF'
+.                     return 'INVALID'
+
+/lex
+
+/* operator associations and precedence */
+%right ':='
+%left '[' ']'
+%left '-'
+%right '^^', '++','--'
+%left '||' 
+%left '&&' 
+%left '?' 
+%left '|&'
+%right '!'
+%left '^'
+%left '==' '!=' '<' '>' '<=' '>='
+%left '+'
+%left '*' '/'
+%right '!'
+%left '%'
+%left UMINUS
+%right  '='
+
+
+%start inicio
+
+%% /* language grammar */
+
+inicio: cuerpo EOF{
+            $$= new arbol(); 
+            $$.nombre="INICIO"; 
+            $$.hijos=new LinkedList(); 
+            $$.hijos.add($1); 
+            return $$;
+};
+
+cuerpo: cuerpo instrucciones {
+                $$=new arbol();
+                $$.nombre="cuerpo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos=$1.hijos;        
+                $$.hijos.add($2);
+        }
+        |instrucciones{
+                $$=new arbol();
+                $$.nombre="cuerpo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1); 
+        };
+
+
+instrucciones: variable_Declaracion ';'{
+                $$=new arbol();
+                $$.nombre="variable_Declaracion"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+               |variable_Asignacion ';'{
+                $$=new arbol();
+                $$.nombre="variable_Asignacion5"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                 |sentenciaImprimir ';'{
+                $$=new arbol();
+                $$.nombre="sentenciaImprimir"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                } 
+               |sentenciaIf{
+                $$=new arbol();
+                $$.nombre="sentenciaIf"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                } 
+                |sentenciaSwitch{
+                $$=new arbol();
+                $$.nombre="sentenciaSwitch"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |definicionFuncion{
+                $$=new arbol();
+                $$.nombre="definicionFuncion"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaDoWhile{
+                $$=new arbol();
+                $$.nombre="sentenciaDoWhile"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaFor{
+                $$=new arbol();
+                $$.nombre="sentenciaFor"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaWhile{
+                $$=new arbol();
+                $$.nombre="sentenciaWhile"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaBreak ';'{
+                $$=new arbol();
+                $$.nombre="sentenciaBreak"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaContinue ';'{
+                $$=new arbol();
+                $$.nombre="sentenciaContinue"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |sentenciaReturn ';'{
+                $$=new arbol();
+                $$.nombre="sentenciaReturn"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |definicionEstructuras ';'{
+                $$=new arbol();
+                $$.nombre="definicionEstructuras"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |asignacionEstructura ';'{
+                $$=new arbol();
+                $$.nombre="asignacionEstructura1"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |incDecRemento ';'{
+                $$=new arbol();
+                $$.nombre="incDecRemento"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |llamadaFuncion ';' {
+                $$=new arbol();
+                $$.nombre="llamadaFuncion"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |asignacionEddArreglo ';'{
+                $$=new arbol();
+                $$.nombre="asignacionEddArreglo"; 
+                $$.linea = yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);     
+                }; 
+
+/* ---------------------------------------------------------------------- DECLARACIONES ---------------------------------------------------------------------------------*/
+variable_Declaracion:VAR ID ':=' expresionlog{  
+                        //--------- YA
+                        $$= new arbol();
+                        $$.nombre="VAR"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$2; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($4);
+                     }
+                     |CONST ID ':=' expresionlog{  //--------- YA
+                        $$= new arbol();
+                        $$.nombre="CONST"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$2; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($4);
+                    }
+                    |   GLOBAL ID ':=' expresionlog{  //--------- YA
+                        $$= new arbol();
+                        $$.nombre="GLOBAL"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$2; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($4);    
+                    } 
+                    |tipoVar lst_ids '=' expresionlog{  //--------- YA
+                        $$= new arbol();
+                        $$.nombre="tipoVar"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();  
+                        $$.hijos.add($1);
+                        $$.hijos.add($2);
+                        $$.hijos.add($4);
+                    }
+                     |tipoVar lst_ids {   //--------- YA
+                        $$= new arbol();
+                        $$.nombre="tipoVar"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList(); 
+                        $$.hijos.add($1);
+                        $$.hijos.add($2);
+                    }
+                     //AREGLOS 
+                    | tipoVar '[' ']' lst_ids '=' expresionlog{ //----- YA
+                        $$= new arbol();
+                        $$.nombre="tipoVar"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        $$.hijos.add($1);
+                        $$.hijos.add($4);
+                        $$.hijos.add($6);    
+                    }                     
+                    | ID '[' ']' lst_ids '=' expresionlog{
+                        $$= new arbol();
+                        $$.nombre="id[]"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1;  
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($4);
+                        $$.hijos.add($6); 
+                     }
+                     |tipoVar '[' ']' lst_ids{  //---- YA
+                        $$= new arbol();
+                        $$.nombre="tipoVar[]"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();
+                        $$.hijos.add($4);
+                        }                     
+                     |ID '[' ']' lst_ids{
+                        $$= new arbol();
+                        $$.nombre="ID[]"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($4);
+                        }
+                     //ESTRUCTURA                     
+                     |ID lst_ids '=' expresionlog{ //---- YA
+                        $$= new arbol();
+                        $$.nombre="ID"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($2);
+                        $$.hijos.add($4);
+                     }
+                     |ID lst_ids{ //------ YA
+                     $$= new arbol();
+                        $$.nombre="ID"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($2);
+                    };
+
+lst_ids: lst_ids ',' ID{
+                $$=new arbol();
+                $$.nombre="lst_ids"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos=$1.hijos;            
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);
+        }
+        |ID{
+                $$=new arbol();
+                $$.nombre="id"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();          
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);
+        };
+
+
+tipoVar: DOUBLE {
+                $$=new arbol(); 
+                $$.nombre="DOUBLE";
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();
+        }
+        | INTEGER{
+                $$=new arbol(); 
+                $$.nombre="INTEGER";
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();
+        }
+        | CHAR{
+                $$=new arbol(); 
+                $$.nombre="CHAR";
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();
+        }
+        |BOOLEAN{
+                $$=new arbol(); 
+                $$.nombre="BOOLEAN";
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();
+        }
+        |VOID {
+                $$=new arbol(); 
+                $$.nombre="VOID";
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();
+        };
+
+/* ---------------------------------------------------------------------- ASIGNACION ---------------------------------------------------------------------------------*/
+variable_Asignacion: ID '=' expresionlog{
+        $$= new arbol();
+        $$.nombre="variable_Asignacion1"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();           
+        var n = new arbol(); 
+        n.nombre=$1; 
+        n.tipo ="id"; 
+        n.hijos=new LinkedList();  
+        n.linea =yylineno; 
+        n.columna = yyleng;  
+        $$.hijos.add(n);       
+        $$.hijos.add($3);
+        };
+
+
+/* ---------------------------------------------------------------------- SENTENCIA PRINT ---------------------------------------------------------------------------------*/
+sentenciaImprimir: PRINT '(' expresionlog ')' {                    
+                    $$= new arbol();
+                    $$.nombre="PRINT"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();       
+                    $$.hijos.add($3);
+                };
+
+
+/*------------------------------------------------------------------------ SENTENCIA IF --------------------------------------------------------------------------------------*/
+sentenciaIf: si{
+                $$= new arbol();
+                $$.nombre="SI1"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();     
+                $$.hijos.add($1);
+            } 
+            | si entonces{
+                $$= new arbol();
+                $$.nombre="SI2"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($1);
+                $$.hijos.add($2);
+            }
+            | si entoncesSi{
+                $$= new arbol();
+                $$.nombre="SI3"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($1);
+                $$.hijos.add($2);
+            }
+            | si entoncesSi entonces{
+                $$= new arbol();
+                $$.nombre="SI4"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();      
+                $$.hijos.add($1);      
+                $$.hijos.add($2);
+                $$.hijos.add($3);
+            };
+
+
+si: IF '(' expresionlog ')' '{' cuerpo '}'{
+                $$= new arbol();
+                $$.nombre="SI5"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();        
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);       
+                $$.hijos.add($3);
+                $$.hijos.add($6);
+        };
+
+
+entoncesSi:  entoncesSi entSi{                    
+                    $$=new arbol();
+                    $$.nombre="entoncesSi"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos=new LinkedList();
+                    $1.hijos.add($2);        
+                    $$=$1;
+            }
+            |entSi{
+                    $$=new arbol();
+                    $$.nombre="entSi"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos=new LinkedList();
+                    $$.hijos.add($1); 
+            };
+
+entSi: ELSE IF '(' expresionlog ')' '{' cuerpo '}'{    
+            $$= new arbol();
+            $$.nombre="entSi"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($4);       
+            $$.hijos.add($7);
+        };
+
+entonces: ELSE '{' cuerpo '}'{ 
+                $$= new arbol();
+                $$.nombre="entonces"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($3); 
+            };
+
+/* ---------------------------------------------------------------------- SENTENCIA SWITCH ---------------------------------------------------------------------------------*/
+sentenciaSwitch: SWITCH '(' expresionlog ')' switchBlock {
+                    $$= new arbol();
+                    $$.nombre="SWITCH"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();       
+                    $$.hijos.add($3);     
+                    $$.hijos.add($5);
+            };
+
+switchBlock: '{' (decBlockGrup)?  (senDef)? '}'{                    
+                    $$= new arbol();
+                    $$.nombre="switchBlock"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();       
+                    $$.hijos.add($2);     
+                    $$.hijos.add($3);
+            };
+
+decBlockGrup: decBlockGrup decBlock{
+                $$= new arbol();
+                $$.nombre="decBlockGrup"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos= $1.hijos;
+                $$.hijos.add($2);
+             }
+             |decBlock{
+                $$= new arbol();
+                $$.nombre="decBlock"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos= $1.hijos;
+             };
+
+decBlock:  switchLabel cuerpo {
+                $$= new arbol();
+                $$.nombre="switchLabel"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();
+                $$.hijos.add($1);
+                $$.hijos.add($2);
+            };
+
+switchLabel: switchLabel switchLab{
+                $$=new arbol();
+                $$.nombre="SWITCHLabel"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);      
+                $$.hijos.add($2);
+            }    
+            |switchLab{
+                $$= new arbol();
+                $$.nombre="SWITCHLabel"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($1);
+            };
+
+switchLab: CASE expresion ':'{
+                $$= new arbol();
+                $$.nombre="SWITCHLab"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($2);
+          };                    
+
+senDef : DEFAULT ':' cuerpo{
+                $$= new arbol();
+                $$.nombre="DEFAULT"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($3);
+           }
+          |DEFAULT ':' {
+               $$= new arbol();
+               $$.nombre="DEFAULT"; 
+               $$.linea =yylineno;
+               $$.columna = yyleng;
+               $$.hijos= new LinkedList();
+           }; 
+
+
+
+
+/* ---------------------------------------------------------------------- SENTENCIA WHILE ---------------------------------------------------------------------------------*/
+sentenciaWhile: WHILE '(' expresionlog ')' '{' cuerpo '}'{
+            $$= new arbol();
+            $$.nombre="WHILE"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($3);
+            $$.hijos.add($6);
+        };
+
+/* ---------------------------------------------------------------------- SENTENCIA DO WHILE ---------------------------------------------------------------------------------*/
+sentenciaDoWhile: DO '{' cuerpo '}' WHILE '(' expresionlog ')' ';' {
+            $$= new arbol();
+            $$.nombre="DO_WHILE"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($3);
+            $$.hijos.add($7);
+        };
+
+/* ---------------------------------------------------------------------- SENTENCIA FOR ---------------------------------------------------------------------------------*/
+sentenciaFor: FOR '(' forInit ';' expresionlog ';'  forFinal')' '{' cuerpo '}'{
+                $$= new arbol();
+                $$.nombre="FOR"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($3);
+                $$.hijos.add($5);
+                $$.hijos.add($7);
+                $$.hijos.add($10);
+            }
+            |FOR '('  ';' expresionlog ';'  forFinal')' '{' cuerpo '}'{
+                $$= new arbol();
+                $$.nombre="FOR"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($3);
+                $$.hijos.add($5);
+                $$.hijos.add($7);
+                $$.hijos.add($10);
+            }
+            |FOR '('  ';'  ';' ')' '{' cuerpo '}'{
+                $$= new arbol();
+                $$.nombre="FOR"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos= new LinkedList();       
+                $$.hijos.add($3);
+                $$.hijos.add($5);
+                $$.hijos.add($7);
+                $$.hijos.add($10);
+            };
+
+forInit: variable_Declaracion{
+            $$= new arbol();
+            $$.nombre="variable_Declaracion"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($1);
+        }
+        |variable_Asignacion{
+           $$= new arbol();
+            $$.nombre="variable_Asignacion2"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($1);
+        };
+        
+forFinal:variable_Asignacion{
+            $$= new arbol();
+            $$.nombre="variable_Asignacion3"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($1);
+        }
+        |incDecRemento{
+            $$= new arbol();
+            $$.nombre="incDecRemento"; 
+            $$.linea =yylineno;
+            $$.columna = yyleng;
+            $$.hijos= new LinkedList();       
+            $$.hijos.add($1);
+        };
+
+/* ---------------------------------------------------------------------- INCREMENTO Y DECREMENTO ---------------------------------------------------------------------------------*/
+incDecRemento:ID '++'{ 
+                $$= new arbol();
+                $$.nombre="INCREMENTO"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);
+            }
+             |ID '--'{
+             
+                $$= new arbol();
+                $$.nombre="DECREMENTO"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);
+                
+            };
+
+/* ---------------------------------------------------------------------- SENTENCIAS DE TRANSFERENCIA ---------------------------------------------------------------------------------*/
+sentenciaContinue:CONTINUE{
+                    $$= new arbol();
+                    $$.nombre="CONTINUE"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();       
+                    $$.hijos.add($1);
+                  };
+
+sentenciaReturn:RETURN expresionlog{
+                        $$= new arbol();
+                        $$.nombre="RETURN"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        $$.hijos.add($2);
+                };  
+
+sentenciaBreak:BREAK{
+                    $$= new arbol();
+                    $$.nombre="BREAK"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();          
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n);     
+                };                
+
+/* ---------------------------------------------------------------------- FUNCIONES ---------------------------------------------------------------------------------*/
+visibilidad: PUBLIC{
+                $$=new arbol(); 
+                $$.nombre="public"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;  
+                $$.hijos= new LinkedList();
+            }
+            |PRIVATE{
+                $$=new arbol(); 
+                $$.nombre="private"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;  
+                $$.hijos= new LinkedList();
+            };
+
+lst_parametros: lst_parametros ',' parametro{
+                $$=new arbol();
+                $$.nombre="parametro1"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+                }
+                |parametro{
+                $$=new arbol();
+                $$.nombre="parametro2"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                };
+
+parametro: tipoVar ID {
+                $$= new arbol();
+                $$.nombre="parametro3"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add($1);  
+                $$.hijos.add(n);
+           }
+           |ID ID{
+                $$= new arbol();
+                $$.nombre="parametro4"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;         
+                var n2 = new arbol(); 
+                n2.nombre=$2; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add(n);
+                $$.hijos.add(n2); 
+           }
+           |tipoVar '[' ']' ID{
+                $$= new arbol();
+                $$.nombre="parametro5"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$4; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng; 
+                $$.hijos.add($1);  
+                $$.hijos.add(n);
+           }
+           |ID '[' ']' ID{
+                $$= new arbol();
+                $$.nombre="parametro6"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng; 
+                $$.tipo = "prefijo";
+                $$.hijos= new LinkedList();       
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;        
+                var n1 = new arbol(); 
+                n1.nombre=$4; 
+                n1.tipo ="id"; 
+                n1.hijos=new LinkedList();  
+                n1.linea =yylineno; 
+                n1.columna = yyleng;  
+                $$.hijos.add(n);  
+                $$.hijos.add(n1);
+           };                
+
+
+definicionFuncion:
+                //----- CON PARAMETROS
+                //- con tipos 
+                tipoVar ID '(' lst_parametros ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$2; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;  
+                    $$.hijos.add($1);   
+                    $$.hijos.add(n);  
+                    $$.hijos.add($4); 
+                    $$.hijos.add($7);
+
+                   }
+                |tipoVar ID '(' lst_parametros ')' '{'  '}'{
+                        
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$2; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;   
+                    $$.hijos.add($1); 
+                    $$.hijos.add(n);  
+                    $$.hijos.add($4);
+
+                   }
+                //- tipo estructura
+                |ID ID '(' lst_parametros ')' '{' cuerpo '}'{
+                        
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                    $$.hijos.add($4);
+                    $$.hijos.add($7);
+
+                }
+                |ID ID '(' lst_parametros ')' '{'  '}'{
+                        
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1); 
+                    $$.hijos.add($4);
+
+                }
+                //-tipo arreglos
+                |ID '[' ']' ID '(' lst_parametros ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1); 
+                    $$.hijos.add($6); 
+                    $$.hijos.add($8);
+                }
+                |ID '[' ']' ID '(' lst_parametros ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                    $$.hijos.add($6);
+                }
+                //-tipo arreglos estructura
+                |tipoVar '['']' ID '(' lst_parametros ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$4; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol();  
+                    $$.hijos.add($1);  
+                    $$.hijos.add(n);  
+                    $$.hijos.add($6); 
+                    $$.hijos.add($8);
+                }
+                |tipoVar '[' ']' ID  '(' lst_parametros ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$4; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol();  
+                    $$.hijos.add($1);  
+                    $$.hijos.add(n);  
+                    $$.hijos.add($6);
+                }
+                //-- SIN PARAMETROS
+                //- tipo primitivo
+                |tipoVar ID '('  ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList(); 
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1); 
+                    $$.hijos.add($6);
+                }
+                |tipoVar ID '(' ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add($1);  
+                    $$.hijos.add(n1);
+                }
+                //-tipo arreglos
+                |tipoVar '[' ']' ID '('  ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1); 
+                    $$.hijos.add($8);
+                }
+                |tipoVar '[' ']' ID '(' ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add($1);  
+                    $$.hijos.add(n1);
+                }
+                //tipo arreglo estructura
+                |ID '[' ']' ID '('  ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                    $$.hijos.add($8);
+                }
+                |ID '[' ']' ID '(' ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$4; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                }
+                |ID ID '('  ')' '{' cuerpo '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                    $$.hijos.add($6);
+                }
+                |ID ID '(' ')' '{'  '}'{
+                    $$= new arbol();
+                    $$.nombre="definicionFuncion"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng; 
+                    $$.tipo = "prefijo";
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.tipo ="id"; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;        
+                    var n1 = new arbol(); 
+                    n1.nombre=$2; 
+                    n1.tipo ="id"; 
+                    n1.hijos=new LinkedList();  
+                    n1.linea =yylineno; 
+                    n1.columna = yyleng;  
+                    $$.hijos.add(n);  
+                    $$.hijos.add(n1);
+                }
+                ; 
+
+/* ----------------------------------------------------------- LLAMADA A FUNCIONES ---------------------------------------------------------------------------------*/
+llamadaFuncion: ID '(' lstParametros ')'{
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion1"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($3);
+                }
+                |ID '(' lstParametros ')' '.' lstObj{
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion2"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($3);   
+                        $$.hijos.add($6);
+                }
+                |ID '(' lstParametros ')' '['expresionlog ']' '.' lstObj{    
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion3"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($3);   
+                        $$.hijos.add($6);  
+                        $$.hijos.add($8);
+                }
+                |ID '(' ')'{
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion4"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n); 
+                 }
+                |ID '(' ')' '.' lstObj{
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion5"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($5);
+                }
+                |ID '(' ')' '['expresionlog ']' '.' lstObj{
+                        $$= new arbol();
+                        $$.nombre="llamadaFuncion6"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($5);  
+                        $$.hijos.add($8);
+                };
+
+
+lstParametros: lstParametros ',' callParametros{
+                $$=new arbol();
+                $$.nombre="callParametros2"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+               }
+               |callParametros{
+                $$=new arbol();
+                $$.nombre="callParametros1"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+               };
+             
+
+callParametros: '$' tipoParametros{
+                $$=new arbol();
+                $$.nombre="tipoParametros"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |tipoParametros{
+                $$=new arbol();
+                $$.nombre="tipoParametros"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                };
+
+tipoParametros: variable_Asignacion{
+                $$=new arbol();
+                $$.nombre="variable_Asignacion4"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                }
+                |expresionlog{
+                $$=new arbol();
+                $$.nombre="expresionlog"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+                };
+
+/* ------------------------------------------------------------ DEFINICION DE ESTRUCTURAS ---------------------------------------------------------------------------------*/
+definicionEstructuras: DEFINE ID AS '[' lstAtributos ']'{
+                $$=new arbol();
+                $$.nombre="Define"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;  
+                $$.hijos.add(n); 
+                $$.hijos.add($5); 
+                        };
+
+lstAtributos: lstAtributos ',' atributo{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+               }
+              |atributo{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+              };
+            
+atributo: tipoVar ID{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n2 = new arbol(); 
+                n2.nombre=$2; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add($1);
+                $$.hijos.add(n2);
+         }
+         |tipoVar ID '=' expresionlog{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n2 = new arbol(); 
+                n2.nombre=$2; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add($1);
+                $$.hijos.add(n2);
+                $$.hijos.add($4);
+         }
+         |tipoVar '[' ']' ID '=' expresionlog{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n2 = new arbol(); 
+                n2.nombre=$4; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add($1);
+                $$.hijos.add(n2);
+                $$.hijos.add($6);
+         }
+         |tipoVar '[' ']' ID {
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n2 = new arbol(); 
+                n2.nombre=$4; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add($1);
+                $$.hijos.add(n2);
+         }
+         |ID '[' ']' ID '=' expresionlog{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;       
+                var n2 = new arbol(); 
+                n2.nombre=$4; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add(n); 
+                $$.hijos.add(n2); 
+                $$.hijos.add($6); 
+         }
+         |ID '[' ']' ID {
+             //----------------------------------------------------
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;       
+                var n2 = new arbol(); 
+                n2.nombre=$4; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add(n); 
+                $$.hijos.add(n2); 
+         }
+         |ID ID {
+             //-------------------------------------
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();     
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;       
+                var n2 = new arbol(); 
+                n2.nombre=$2; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add(n); 
+                $$.hijos.add(n2); 
+         }
+         |ID ID '=' expresionlog{
+                $$=new arbol();
+                $$.nombre="atributo"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();    
+                var n = new arbol(); 
+                n.nombre=$1; 
+                n.tipo ="id"; 
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng;       
+                var n2 = new arbol(); 
+                n2.nombre=$2; 
+                n2.tipo ="id"; 
+                n2.hijos=new LinkedList();  
+                n2.linea =yylineno; 
+                n2.columna = yyleng;  
+                $$.hijos.add(n);
+                $$.hijos.add(n2);
+                $$.hijos.add($4);
+         };        
+
+/* ------------------------------------------------------------ LISTA OBJETOS ---------------------------------------------------------------------------------*/
+listaObjetos: ID '.' lstObj{
+                        $$= new arbol();
+                        $$.nombre="listaObjetos"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);      
+                        $$.hijos.add($3);
+             }
+             |'(' expresionlog ')' '.' lstObj{
+                 
+                        $$= new arbol();
+                        $$.nombre="listaObjetos"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList(); 
+                        $$.hijos.add($2);      
+                        $$.hijos.add($5);
+             };
+
+lstObj:lstObj '.' obj{
+                $$=new arbol();
+                $$.nombre="objeto1"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+       }
+       |obj{
+                $$=new arbol();
+                $$.nombre="objeto2"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+       };
+
+obj:ID{
+                $$=new arbol();
+                $$.nombre="objeto3"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();    
+                var n = new arbol(); 
+                n.nombre=$1;  
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng; 
+                $$.hijos.add(n);  
+    }
+    |ID '[' expresionlog ']'{
+                $$=new arbol();
+                $$.nombre="objeto4"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();    
+                var n = new arbol(); 
+                n.nombre=$1;  
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng; 
+                $$.hijos.add(n);   
+                $$.hijos.add($3); 
+    }
+    |ID '(' ')'{
+                $$=new arbol();
+                $$.nombre="objeto5"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();    
+                var n = new arbol(); 
+                n.nombre=$1;  
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng; 
+                $$.hijos.add(n);  
+    }
+    |ID '(' expresionlog ')'{
+                $$=new arbol();
+                $$.nombre="objeto6"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();    
+                var n = new arbol(); 
+                n.nombre=$1;  
+                n.hijos=new LinkedList();  
+                n.linea =yylineno; 
+                n.columna = yyleng; 
+                $$.hijos.add(n);    
+                $$.hijos.add($3); 
+    };       
+
+/* ------------------------------------------------------------  ESTRUCTURAS ---------------------------------------------------------------------------------*/
+declaracionEstructuras:STRC ID '(' ')'{
+                        $$= new arbol();
+                        $$.nombre="declaracionEstructuras"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1;  
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng; 
+                        var n2 = new arbol(); 
+                        n2.nombre=$2;  
+                        n2.hijos=new LinkedList();  
+                        n2.linea =yylineno; 
+                        n2.columna = yyleng;  
+                        $$.hijos.add(n);  
+                        $$.hijos.add(n2);  
+                       };
+
+lstObjEdd: lstOds '.' ID{
+                $$=new arbol();
+                $$.nombre="ID"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+        }
+        |ID{
+                $$=new arbol();
+                $$.nombre="ID"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+        };
+
+asignacionEstructura: ID '.' lstObj '=' expresionlog{
+                        $$= new arbol();
+                        $$.nombre="asignacionEstructura2"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();      
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n); 
+                        $$.hijos.add($3);   
+                        $$.hijos.add($5); 
+                    }
+                    |'(' expresionlog ')' '.' lstObj '=' expresionlog{  
+                        $$= new arbol();
+                        $$.nombre="asignacionEstructura3"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();
+                        $$.hijos.add($2); 
+                        $$.hijos.add($5);   
+                        $$.hijos.add($7); 
+                    };
+
+
+/* ------------------------------------------------------------- DECLARACION DE ARREGLOS ---------------------------------------------------------------------------------*/
+
+declaracionArreglo: STRC tipoVar '[' expresionlog ']'{
+                        $$= new arbol();
+                        $$.nombre="declaracionArreglo"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng; 
+                        $$.tipo = "strc";
+                        $$.hijos= new LinkedList(); 
+                        $$.hijos.add($2); 
+                        $$.hijos.add($4);
+                     }
+                    |STRC ID '[' expresionlog ']'{
+                        $$= new arbol();
+                        $$.nombre="declaracionArreglo"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.tipo = "strc";
+                        $$.hijos= new LinkedList();  
+                        var n = new arbol(); 
+                        n.nombre=$2; 
+                        n.tipo ="id"; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n); 
+                        $$.hijos.add($4);
+                    }
+                    |arrayValues{
+                       
+                        $$= new arbol();
+                        $$.nombre="arrayValues"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList(); 
+                        $$.hijos.add($2); 
+                        
+                         };
+
+arrayValues: '{' lstExp '}'{
+                        $$= new arbol();
+                        $$.nombre="arrayValues"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList(); 
+                        $$.hijos.add($2); 
+            };
+
+lstExp: lstExp ',' elemento{
+                $$=new arbol();
+                $$.nombre="elemento"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos= $1.hijos;        
+                $$.hijos.add($3);
+       }
+       |elemento{
+                $$=new arbol();
+                $$.nombre="elemento"; 
+                $$.linea =yylineno;
+                $$.columna = yyleng;
+                $$.hijos=new LinkedList();
+                $$.hijos.add($1);  
+       };
+
+elemento: expresionlog{
+            $$= new arbol(); 
+            $$.nombre="expresionlog"; 
+            $$.linea =yylineno;  
+            $$.columna = yyleng; 
+            $$.hijos= new LinkedList();        
+            $$.hijos.add($1); 
+          };
+
+
+
+asignacionEddArreglo:ID '[' expresionlog ']' '.' lstObj '=' expresionlog{
+                        $$= new arbol();
+                        $$.nombre="asignacionEddArreglo"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($3);
+                        $$.hijos.add($6);
+                        $$.hijos.add($8);
+                        }
+                    |ID '[' expresionlog ']' '=' expresionlog{
+                        $$= new arbol();
+                        $$.nombre="asignacionEddArreglo"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($3);
+                        $$.hijos.add($6);
+                 };
+
+accesosEddArreglo:ID '[' expresionlog ']' '.' lstObj{
+                    $$= new arbol();
+                    $$.nombre="accesosEddArreglo"; 
+                    $$.linea =yylineno;
+                    $$.columna = yyleng;
+                    $$.hijos= new LinkedList();       
+                    var n = new arbol(); 
+                    n.nombre=$1; 
+                    n.hijos=new LinkedList();  
+                    n.linea =yylineno; 
+                    n.columna = yyleng;  
+                    $$.hijos.add(n);
+                    $$.hijos.add($3);
+                    $$.hijos.add($6);
+                 }
+                 |ID '[' expresionlog ']'{    
+                        $$= new arbol();
+                        $$.nombre="accesosEddArreglo"; 
+                        $$.linea =yylineno;
+                        $$.columna = yyleng;
+                        $$.hijos= new LinkedList();       
+                        var n = new arbol(); 
+                        n.nombre=$1; 
+                        n.hijos=new LinkedList();  
+                        n.linea =yylineno; 
+                        n.columna = yyleng;  
+                        $$.hijos.add(n);
+                        $$.hijos.add($3);
+                 };
+
+/*------------------------------------------------------------------ CASTEOS -----------------------------------------------------------------*/
+tiposCasteos: 
+            '(' INTEGER ')'expresionlog{
+                $$= new arbol(); 
+                $$.nombre="EXP"; 
+                $$.linea =yylineno;  
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();  
+                var n = new arbol();
+                n.nombre=$2; 
+                n.tipo = "integer"; 
+                n.hijos=new LinkedList();        
+                $$.hijos.add($4); 
+             }
+             |'(' CHAR ')' expresionlog{
+                $$= new arbol(); 
+                $$.nombre="EXP"; 
+                $$.linea =yylineno;  
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();  
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo = "char"; 
+                n.hijos=new LinkedList();        
+                $$.hijos.add($4); 
+             }
+             |'(' DOUBLE ')' expresionlog{
+                $$= new arbol(); 
+                $$.nombre="EXP"; 
+                $$.linea =yylineno;  
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();  
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo = "double"; 
+                n.hijos=new LinkedList();        
+                $$.hijos.add($4); 
+             }
+             |'(' BOOLEAN ')' expresionlog{
+                $$= new arbol(); 
+                $$.nombre="EXP"; 
+                $$.linea =yylineno;  
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();  
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo = "boolean"; 
+                n.hijos=new LinkedList();        
+                $$.hijos.add($4); 
+             }
+             |'(' ID ')' expresionlog{
+                $$= new arbol(); 
+                $$.nombre="EXP"; 
+                $$.linea =yylineno;  
+                $$.columna = yyleng; 
+                $$.hijos= new LinkedList();  
+                var n = new arbol(); 
+                n.nombre=$2; 
+                n.tipo = "id"; 
+                n.hijos=new LinkedList(); 
+                $$.hijos.add($4);
+             };
+
+/* ---------------------------------------------------------------------- EXPRESIONES ---------------------------------------------------------------------------------*/
+expresionlog:
+    expresionlog '&&' expresionlog
+{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="&&"; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+| expresionlog '||' expresionlog
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="||"; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+| '!' expresionlog
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$1; 
+    n.tipo = "!"; 
+    n.hijos=new LinkedList();  
+    $$.hijos.add($2);
+    }
+|'(' INTEGER ')' expresion{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$2; 
+    n.tipo = "integer"; 
+    n.hijos=new LinkedList();  
+    $$.hijos.add($4);
+}
+|'(' CHAR ')' expresion{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$2; 
+    n.tipo = "char"; 
+    n.hijos=new LinkedList();  
+    $$.hijos.add($4);
+}
+|'(' DOUBLE ')' expresion{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$2; 
+    n.tipo = "double"; 
+    n.hijos=new LinkedList();  
+    $$.hijos.add($4);
+}
+|'(' BOOLEAN ')' expresion{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$2; 
+    n.tipo = "boolean"; 
+    n.hijos=new LinkedList();  
+    $$.hijos.add($4);
+}
+|expresion ID{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=$1; 
+    n.tipo = "id"; 
+    n.hijos=new LinkedList(); 
+    $$.hijos.add(n);
+}
+|expresionrel
+{
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();        
+    $$.hijos.add($1); 
+}
+;
+
+expresionrel
+: expresion '==' expresion
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="=="; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+|expresion '===' expresion{
+    
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="==="; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+
+    }    
+| expresion '!=' expresion
+    {
+    
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="!="; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    
+    }
+| expresion '<' expresion
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="<"; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+| expresion '>' expresion
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=">"; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+| expresion '<=' expresion
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre="<="; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+| expresion '>=' expresion
+    {
+    $$= new arbol(); 
+    $$.nombre="EXP"; 
+    $$.linea =yylineno;  
+    $$.columna = yyleng; 
+    $$.hijos= new LinkedList();  
+    var n = new arbol(); 
+    n.nombre=">="; 
+    n.tipo = "operador"; 
+    n.hijos=new LinkedList();        
+    $$.hijos.add($1); 
+    $$.hijos.add(n); 
+    $$.hijos.add($3);
+    }
+
+| expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();        
+        $$.hijos.add($1); 
+    }
+;
+
+expresion: 
+    expresion '+' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="+"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '-' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="-"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '*' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="*"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '/' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="/"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '^^' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="^^"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '%' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="%"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |expresion '^' expresion
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="^"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+        $$.hijos.add(n); 
+        $$.hijos.add($3);
+    }
+    |'-' expresion %prec UMINUS
+    {
+        $$= new arbol(); 
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;  
+        $$.columna = yyleng; 
+        $$.hijos= new LinkedList();  
+        var n = new arbol(); 
+        n.nombre="%prec"; 
+        n.tipo = "operador"; 
+        n.hijos=new LinkedList();        
+        $$.hijos.add($1); 
+    }
+    |'(' expresionlog ')'{
+        $$= new arbol();  
+        $$.nombre="EXP";
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$2; 
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |DECIMAL
+    {
+        $$= new arbol();  
+        $$.nombre="EXP";
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="decimal";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |NUMBER
+    {
+        $$= new arbol();  
+        $$.nombre="EXP";
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="number";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |CARACTER
+    {
+        $$= new arbol();  
+        $$.nombre="EXP";
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="CARACTER";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |CADENA
+    {
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre="cadena";
+        n1.tipo ="cadena"; 
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |NULL
+    {
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="null";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |ID
+    {
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="id";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |TRUE
+    {
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="true";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |FALSE
+    {
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1; 
+        n1.tipo ="false";
+        n1.hijos=new LinkedList();        
+        $$.hijos.add(n1);
+    }
+    |ID '++'{
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1;
+        n1.hijos=new LinkedList();  
+        var n2 = new arbol(); 
+        n2.nombre=$2;
+        n2.hijos=new LinkedList();         
+        $$.hijos.add(n1);      
+        $$.hijos.add(n2);
+    }
+    |ID '--'{
+        $$= new arbol();  
+        $$.nombre="EXP"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList(); 
+        var n1 = new arbol(); 
+        n1.nombre=$1;
+        n1.hijos=new LinkedList();  
+        var n2 = new arbol(); 
+        n2.nombre=$2;
+        n2.hijos=new LinkedList();         
+        $$.hijos.add(n1);      
+        $$.hijos.add(n2);
+    }
+    |declaracionEstructuras{
+        $$= new arbol();  
+        $$.nombre="declaracionEstructuras"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();       
+        $$.hijos.add($1);
+    }
+    |declaracionArreglo{
+        $$= new arbol();  
+        $$.nombre="declaracionArreglo"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();   
+        $$.hijos.add($1);
+    }
+    |listaObjetos{
+        $$= new arbol();  
+        $$.nombre="listaObjetos"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();     
+        $$.hijos.add($1);  
+    }
+    |accesosEddArreglo{
+        $$= new arbol();  
+        $$.nombre="accesosEddArreglo"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();    
+        $$.hijos.add($1);
+    }
+    |llamadaFuncion{
+        $$= new arbol();  
+        $$.nombre="llamadaFuncion"; 
+        $$.linea =yylineno;
+        $$.columna = yyleng;
+        $$.hijos= new LinkedList();       
+        $$.hijos.add($1);
+    }
+    ;

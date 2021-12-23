@@ -99,8 +99,7 @@
 "in"                    return "IN"
 "begin"                 return "BEGIN"
 "end"                   return "END"
-"pow"                   return "POW"
-"end"                   return "END"
+
 
 (("_"[A-Za-z])|[A-Za-z])([A-Za-z0-9]|"_")*	return 'ID'
 
@@ -112,20 +111,12 @@
 
 /*----------------- Precedencia de operadores ---------------*/
 
-%left '==' '!=' '<' '>' '<=' '>='
 %left '+' '-'
 %left '*' '/'
 %left '^'
 %right '!'
 %right '%'
-%left '^'
-
-%left '&&' 
-%right '^^', '++','--'
-%left '%'
 %left UMINUS
-%right  '='
-
 %token INVALID
 
 %start inicio
@@ -146,7 +137,10 @@ cuerpo: cuerpo instrucciones{
             $$ = { instruccion : [$1] };
         };
 
-instrucciones:declaracionVariable ';' {
+instrucciones: expresionlog{
+                    $$ = $1;
+            }
+        /*declaracionVariable ';' {
                    $$ = $1;
               }
              |declaracionVariable2 ';'{
@@ -208,7 +202,7 @@ instrucciones:declaracionVariable ';' {
              }
              |opCadena ';'{
                 $$ = $1;
-             }
+             }*/
             ;
 
 
@@ -278,12 +272,6 @@ declaracionArreglo : tipoVariable ID '=' arreglo{
                     } 
                     |tipoVariable '[' ']' ID '=' expresionlog{
                           $$ = {nombre : "declaracionArr4", tipo:$1, id:$4 , exp:$6};
-                    }
-                     |tipoVariable '[' ']' ID{
-                         $$ = { nombre : "declaracionArr5", tipo:$1, id:$4 };
-                    }
-                    |ID '[' ']' ID{
-                            $$ = { nombre : "declaracion4", id:$1, id2:$4 };
                     } ;
 
 asignacionArreglo : ID '=' arreglo{
@@ -294,13 +282,10 @@ asignacionArreglo : ID '=' arreglo{
                   };
 
 arreglo : '[' lstArreglo ']'{
-                $$ = $2;
+                $$ = $1;
          }
          |'[' expresion ']'{
-                $$ = $2;
-         }
-         |'[' ']'{
-             $$ = $1;
+                $$ = $1;
          };
 
 accesoArreglo: ID '[' expresionlog ':' expresionlog ']'{
@@ -374,7 +359,7 @@ asignacionStruct: ID ID '=' ID '(' lstDatos ')' {
                       $$ = {nombre : "asignacionObj",  id:$1 , padre:$3, lstExp:$5 };
                  }
                  | ID '.' tipoOpCadena{
-                     $$ = {nombre : "asignacionObjCad",  id:$1 , op1:$3 };
+                     $$ = {nombre : "asignacionObjCad",  id:$1 , op:$3 };
                  }
                  |ID '.' lstID2 '=' expresionlog{
                      $$ = {nombre : "asignacionObjExp",  id:$1 , lstID:$3, exp:$5 };
@@ -512,17 +497,8 @@ sentenciaDoWhile: DO '{' cuerpo '}' WHILE '(' expresionlog ')' ';' {
 
 sentenciaFor: FOR  expresionlog IN expresionlog '{' cuerpo '}'{
                 $$ = { nombre:"sentenciaFor", exp1:$2, exp2:$4, instrucciones:$6 };
-              }
-              |FOR '(' tipoDec ';' expresionlog  ';' expresionlog ')' '{' cuerpo '}'{
-                  $$ = { nombre:"sentenciaFor2", dec:$3, exp1:$5, exp2:$7, instrucciones:$10 };
               };
 
-tipoDec:declaracionVariable{
-            $$=$1;
-        }
-        |asignacionVariable{
-            $$ = $1;
-        };
 /* ---------------------------------------------------------------------- SENTENCIAS DE TRANSFERENCIA ---------------------------------------------------------------------------------*/
 sentenciaContinue:CONTINUE{
                     $$ = {nombre:"sentenciaContinue"};
@@ -530,9 +506,6 @@ sentenciaContinue:CONTINUE{
 
 sentenciaReturn:RETURN expresionlog{
                     $$ = {nombre:"sentenciaReturn", exp:$2 };
-                }
-                |RETURN {
-                    $$ = {nombre:"sentenciaReturn2" };
                 };  
 
 sentenciaBreak:BREAK{
@@ -548,21 +521,8 @@ opTernario: expresionlog '?' expresionlog ':' expresionlog{
 /*----------------------------------------------------------------------------- CADENAS --------------------------------------------------------------------------------*/
 
 opCadena: ID '.' tipoOpCadena {
-            $$ = {nombre : "operacionCad", id:$1, op1:$3 };
-          }
-          |ID '.' lstOpCadena {
-              $$ = {nombre:"operacionCad2", id:$1, op1:$3 };
+            $$ = {nombre : "operacionCad", id:$1, op:$3 };
           };
-
-
-lstOpCadena:  lstOpCadena '.' tipoOpCadena{
-                $1.push($3);
-                $$ = $1;
-            }
-            |tipoOpCadena{
-                 $$ = [$1];
-            };
-
 
 tipoOpCadena: OFPOSITION '(' expresion ')'{
                  $$ = {nombre : "opCadOfPosition", exp:$3 };
@@ -602,19 +562,16 @@ declaracionFuncion: tipoVariable ID '(' lstParametros ')' '{' cuerpo '}'{
                         $$ = { nombre : "funcion4", id:$2, lstInst:$6 };
                     }
                     |ID ID '(' lstParametros ')' '{' cuerpo '}'{
-                        $$ = { nombre : "funcion5", id:$1, id2:$2, lstPar:$4, lstInst:$7 };
+                        $$ = { nombre : "funcion5", id:$1, id:$2, lstPar:$4, lstInst:$7 };
                     }
                     |ID ID '(' ')' '{' cuerpo '}'{
-                        $$ = { nombre : "funcion6", id:$1, id2:$2, lstInst:$6 };
+                        $$ = { nombre : "funcion6", id:$1, id:$2, lstInst:$6 };
                     }
                     |VOID MAIN '(' ')' '{' cuerpo '}'{
                         $$ = { nombre : "funcion7",  lstInst:$6 };
                     }
                     |VOID ID '(' ')' '{' cuerpo '}'{
                         $$ = { nombre : "funcion8", id:$2, lstInst:$6 };
-                    }
-                    |VOID ID '(' lstParametros ')' '{' cuerpo'}'{
-                        $$ = { nombre : "funcion9", id:$2, lstPar:$4, lstInst:$7 };
                     };
 
 
@@ -677,19 +634,24 @@ incDecRemento:ID '++'{
 
 
 expresionlog:expresionlog '&&' expresionlog{
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.AND);
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
             }
             | expresionlog '&' expresionlog{
-                $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };    
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.CONCATCAD);    
+                $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 }; 
             }
             | expresionlog '||' expresionlog{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.OR);
             }
             | '!' expresionlog{
                 $$ = { nombre : "expresion", tipo:$1, op1: $2 };
+                //$$ = new Operacion($1, Operacion.TipoOperacion.NOT);
             }
             |expresion ID{
                 $$ = { tipo:"casteoId", id:$1, exp:$2 };
+                //$$ = new Operacion($1, Operacion.TipoOperacion.CASTEO);
             }
             |expresionrel{
                 $$ = $1;
@@ -698,24 +660,32 @@ expresionlog:expresionlog '&&' expresionlog{
 
 expresionrel: expresion '==' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.IGUAL_QUE);
             }
             |expresion '===' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.TRIPLE_IGUAL_QUE);
             }
             | expresion '!=' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.DIFERENTE_QUE);
             }
             | expresion '<' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.MENOR_QUE);
+
             }
             | expresion '>' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.MAYOR_QUE);
             }
             | expresion '<=' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.MENOR_IGUAL_QUE);
             }
             | expresion '>=' expresion{
                 $$ = { nombre : "expresion", tipo : $2, op1: $1, op2: $3 };
+                //$$ = new Operacion($1, $3, Operacion.TipoOperacion.MAYOR_IGUAL_QUE);
             }
             | expresion{
                 $$ = $1;
@@ -779,9 +749,6 @@ expresion: expresion '+' expresion{
             |SQRT '#' '(' expresionlog ')'{
                 $$ = { nombre:"funSQRTNum", exp:$4 };
             }
-            |POW'(' expresionlog ',' expresionlog ')'{
-                $$ = { nombre:"funPowNum", exp:$3, exp2:$5 };
-            }
             |DECIMAL{
                 $$ = {nombre : "expresion", tipo: "double", valor: $1 };
             }
@@ -806,7 +773,7 @@ expresion: expresion '+' expresion{
             |ID '--'{
                 $$ ={ tipo:"decremento", id:$1};
             }
-            |opCadena{
+           /* |opCadena{
                     $$ = $1;
             }
             |opTernario{
@@ -832,7 +799,7 @@ expresion: expresion '+' expresion{
             }
             |copiarArreglo{
                     $$ = $1;
-            }
+            }*/
             ;
 
 lstExp: lstExp ',' expresionlog{

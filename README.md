@@ -1,14 +1,5 @@
+# Dic2021Compi2
+Repositorio que contiene el código del primer proyecto del grupo 42 del curso de compiladores 2. 
 
-# QUETZAL G42 (Fase1)
-
-## Integrantes de G42 ✒️
-
-* **Luis Carlos Valiente Salazar         -   201122864** - *Luiskr201122864*
-* **Daniel Alejandro Herrera Hernández   -   201213194** - *alwueso*
-
-
-### Descripción General 📋
-
-Proyecto 1 del curso de Compiladores 2 Diciembre 2021. Este proyecto implementa un intérprete del lenguaje Quetzal,
-el cual es un híbrido entre java y C. 
-
+201122864 - Luis Carlos Valiente Salazar
+201313713 -	Daniel Alejandro Herrera Hernandez

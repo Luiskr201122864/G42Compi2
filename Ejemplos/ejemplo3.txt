@@ -1,0 +1,118 @@
+struct Estructura{
+ int a,
+ int b
+};
+
+struct Estructura2{
+ int a,
+ Estructura edd2 
+};
+
+Estructura edd = Estructura(0,1);
+edd.a = 102;
+edd.a = 101;
+
+Estructura2 edd3 = Estructura2(0, edd);
+edd3.a = 10;
+edd3.edd2.a = 13;
+edd3.edd2.b = 14;
+
+print(edd3.edd2.a);
+
+
+
+String[] arr = ["H","O","L","A"];
+int arreglo = [1,2,3,4];
+
+
+int[] arreglo2 = #arreglo;
+
+String[] arr = ["H","O","L","A"];
+print(arr[1]); //O
+print(arr2);
+
+
+int arreglo = [1,2,3,4,5,6,7];
+print(arreglo[2:4]);
+print(arreglo[1:END]);
+print(arreglo[BEGIN:5]);
+print(arreglo[BEGIN:END]);
+int arreglo;
+arreglo = [1,2,3,4];
+
+
+
+
+
+-> funciones
+-> llamadas a funciones
+-> funciones nativas - cadenas
+-> cadenas
+-> operador ternario
+-> operacion con arreglos (#)
+-> arreglos con estructuras
+-> print $
+
+
+function fibonacci( int n ){
+    if (n == 0){
+	    return 0;
+    } else if (n == 1){
+        return 1;
+    }else{
+        return (fibonacci(n-1) + fibonacci(n-2));
+    }
+}
+
+
+function factorial( int n ){
+    if(n==0){
+        return 1;
+    }else{
+        return (n * factorial(n-1));
+    }
+}
+
+function ackermann( int m, int n){
+    if (m == 0){
+        return ( n + 1);
+    }else if ( m > 0 && n == 0){
+        return (ackermann(m - 1, 1));
+    }else{
+        return (ackermann(m - 1, ackermann(m,n - 1)));
+    }
+}
+
+function juego( int discos, int origen, int auxiliar, int destino)
+{
+    if (discos == 1){
+        print(origen);
+      	print(destino);
+    }else{
+        juego(discos - 1, origen, destino, auxiliar);
+        print(origen);
+        print(destino);
+        juego(discos - 1, auxiliar, origen, destino);
+    }
+}
+
+
+
+print(ackermann(3,4));
+print(fibonacci(10));
+print(factorial(10));
+print(juego(4, 1, 2, 3));
+
+
+
+int recusiva1(int m, int n)
+{    
+    if (m == 0){
+        return n + 1;
+    }else if (m > 0 && n == 0){
+        return recusiva1(m - 1, 1);
+    }else{
+        return recusiva1(m - 1, recusiva1(m, n - 1));
+    }
+}
+ println(recusiva1(3, 8)); 

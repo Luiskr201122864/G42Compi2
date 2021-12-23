@@ -12,14 +12,31 @@ const parseQuetzal = function (entrada){
     document.getElementById('consola').innerHTML += ">Intentando analizar XML (" + new Date() + ") \n";
 
     try {
-        document.getElementById('consola').value += ">Entrò a la funciòn para ejecutar el parser \n";
+        document.getElementById('consola').value += ">Entró a la función para ejecutar el parser \n";
+        //let resultado = gramatica.parse(entrada);
         let resultado = gramatica.parse(entrada);
 
         if (resultado) {
+            console.info('Obtuvo respuesta del parser... '+resultado.toString());
+            let entorno = new Entorno(null);
+            let arbol = recorridoArbol(resultado.instruccion);
+            ejecucionArbol(arbol, entorno);
+            let entornoMain = new Entorno(entorno);
+            if(lstMain.length!=0){
+                lstMain[0].ejecutarInstrucciones(arbol, entornoMain);
+            }
             alert('Resultado: '+ resultado.toString());
             document.getElementById('consola').value += ">Se ejecutó el parser \n";
             console.info('Entrada fue parseada correctamente!!!!');
             document.getElementById('consola').value += ">Entrada parseada correctamente! \n";
+
+           // console.log("\n\n\n################################################################");
+                //var grafoAST = graficarArbolAST(arbol);
+                // console.log(grafoAST);
+                // alert(grafoAST);
+                // document.getElementById("hiddenAST").value = grafoAST;
+                //pruebaGraficarViz(grafoAST);
+           // console.log("\n\n\n################################################################");
             
         }else{
             console.info('\nNo se ejecutó la clase parser');
@@ -81,7 +98,7 @@ function abrirReporteAST(){
     document.getElementById('reporteASTGrafica').visible = true;
     //Se llama la funciòn que genera el còdigo de la gràfica en Graphviz
     alert('Se ejecutará la función que grafica el AST...');
-    //pruebaGraficarVizAST(informacion);
+    pruebaGraficarVizAST(informacion);
 }
 
 //Función para mostrar la gráfica del arbol CST en la página principal del proyecto
